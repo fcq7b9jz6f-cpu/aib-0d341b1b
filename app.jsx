@@ -1,89 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { HashRouter, Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 import { motion, useScroll, useSpring } from "framer-motion";
-import { Music, Mic, Film, User, Menu, X } from "lucide-react";
+import { Music, Menu, X, Calendar, MapPin, Landmark } from "lucide-react";
 
-const App = () => {
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  });
-
-  const navLinks = [
-    { title: "الرئيسية", href: "#hero" },
-    { title: "المسيرة", href: "#biography" },
-    { title: "أشهر الأغاني", href: "#songs" },
-    { title: "المعرض", href: "#gallery" },
-  ];
-
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const smoothScroll = (e, target) => {
-      e.preventDefault();
-      document.querySelector(target).scrollIntoView({
-          behavior: 'smooth'
-      });
-      setIsMenuOpen(false);
-  };
-
-  return (
-    <BrowserRouter>
-      <motion.div className="progress-bar" style={{ scaleX }} />
-      <div className="bg-background text-text-primary font-body">
-
-        <header className="fixed top-0 left-0 right-0 z-50 transition-colors duration-300 bg-background/80 backdrop-blur-sm">
-          <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="#hero" onClick={(e) => smoothScroll(e, '#hero')} className="font-display font-bold text-2xl text-primary">كوكب الشرق</a>
-            <nav className="hidden md:flex items-center space-x-8 rtl:space-x-reverse">
-              {navLinks.map((link) => (
-                <a key={link.href} href={link.href} onClick={(e) => smoothScroll(e, link.href)} className="text-text-secondary hover:text-primary transition-colors duration-300 pb-1 border-b-2 border-transparent hover:border-primary"> {link.title} </a>
-              ))}
-            </nav>
-            <div className="md:hidden">
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-primary z-50">
-                    {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-                </button>
-            </div>
-          </div>
-          {isMenuOpen && (
-            <motion.div 
-                initial={{ opacity: 0, y: -20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                className="md:hidden absolute top-full left-0 w-full bg-background shadow-lg">
-                <nav className="flex flex-col items-center py-4">
-                    {navLinks.map((link) => (
-                        <a key={link.href} href={link.href} onClick={(e) => smoothScroll(e, link.href)} className="py-3 text-lg text-text-secondary hover:text-primary transition-colors duration-300"> {link.title} </a>
-                    ))}
-                </nav>
-            </motion.div>
-          )}
-        </header>
-
-        <main>
-          <HeroSection />
-          <BiographySection />
-          <SongsSection />
-          <GallerySection />
-        </main>
-
-        <footer className="bg-neutral-800 text-neutral-300 py-8">
-            <div className="container mx-auto px-6 text-center">
-                <p className="font-display text-lg">"لقد عرفت في حياتي الطويلة أن كل مجد الدنيا باطل أمام لحظة حب صادقة." - أم كلثوم</p>
-                <p className="mt-4 text-sm font-body opacity-70">صُنع هذا الموقع بحب وتقدير لصوت مصر الخالد. &copy; {new Date().getFullYear()}</p>
-            </div>
-        </footer>
-      </div>
-    </BrowserRouter>
-  );
-};
-
-const MotionSection = ({ children, id }) => (
+const MotionSection = ({ children, id, className = "" }) => (
     <motion.section 
         id={id}
-        className="py-20 md:py-32"
+        className={`py-20 md:py-32 ${className}`}
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.3 }}
@@ -92,6 +16,30 @@ const MotionSection = ({ children, id }) => (
         {children}
     </motion.section>
 )
+
+const ScrollToAnchor = () => {
+  const location = useLocation();
+  const lastHash = useRef('');
+
+  useEffect(() => {
+    if (location.pathname === '/' && location.hash) {
+      lastHash.current = location.hash.slice(1);
+    }
+    
+    const element = document.getElementById(lastHash.current);
+
+    if (lastHash.current && element) {
+        setTimeout(() => {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            lastHash.current = '';
+        }, 100); 
+    } else {
+        window.scrollTo(0, 0);
+    }
+  }, [location]);
+
+  return null;
+};
 
 const HeroSection = () => (
   <section id="hero" className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
@@ -207,5 +155,148 @@ const GallerySection = () => {
         </MotionSection>
     )
 }
+
+const HomePage = () => (
+    <>
+        <HeroSection />
+        <BiographySection />
+        <SongsSection />
+        <GallerySection />
+    </>
+)
+
+const ConcertsPage = () => {
+    const concerts = [
+        { year: "1967", city: "باريس", venue: "مسرح الأولمبيا", notes: "حفلتها الأسطورية والوحيدة في أوروبا، لدعم المجهود الحربي." },
+        { year: "1953", city: "دمشق", venue: "معرض دمشق الدولي", notes: "أول حفل لها خارج مصر، مما رسخ مكانتها العربية." },
+        { year: "شهريًا", city: "القاهرة", venue: "سينما قصر النيل، ريفولي، وغيرها", notes: "حفلات الخميس الأول من كل شهر، حدث ينتظره العالم العربي عبر الإذاعة." },
+        { year: "1968", city: "تونس", venue: "قرطاج", notes: "حفل شهير ضمن جولة لدعم المجهود الحربي المصري." },
+        { year: "1960s", city: "طرابلس وبنغازي", venue: "متعدد", notes: "عدة حفلات ناجحة في ليبيا عززت من شعبيتها." },
+        { year: "1970", city: "بيروت", venue: "قصر البيكاديلي", notes: "سلسلة حفلات تاريخية في لبنان." },
+        { year: "1968", city: "الخرطوم", venue: "المسرح القومي", notes: "استقبال حافل في السودان ضمن جولتها الوطنية." },
+    ];
+
+    return (
+        <MotionSection id="concerts-page" className="bg-neutral-800/10">
+            <div className="container mx-auto px-6">
+                <h1 className="font-display text-5xl md:text-7xl text-primary mb-4 text-center">أشهر حفلاتها</h1>
+                <p className="text-xl text-text-secondary text-center max-w-3xl mx-auto mb-16">لم تكن حفلات أم كلثوم مجرد عروض موسيقية، بل كانت تجمعات ثقافية ووطنية كبرى. من القاهرة إلى باريس، سافر صوتها ليوحّد المشاعر ويخدم قضايا أمتها.</p>
+
+                <div className="overflow-x-auto">
+                    <table className="concerts-table">
+                        <thead>
+                            <tr>
+                                <th><Calendar className="inline-block ml-2"/>السنة</th>
+                                <th><MapPin className="inline-block ml-2"/>المدينة</th>
+                                <th><Landmark className="inline-block ml-2"/>المكان</th>
+                                <th>ملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {concerts.map(concert => (
+                                <motion.tr 
+                                    key={concert.venue + concert.city}
+                                    initial={{ opacity: 0 }}
+                                    whileInView={{ opacity: 1 }}
+                                    viewport={{ once: true, amount: 0.5 }}
+                                    transition={{ duration: 0.5 }}
+                                >
+                                    <td data-label="السنة" className="font-bold text-accent">{concert.year}</td>
+                                    <td data-label="المدينة">{concert.city}</td>
+                                    <td data-label="المكان">{concert.venue}</td>
+                                    <td data-label="ملاحظات" className="text-text-secondary text-sm">{concert.notes}</td>
+                                </motion.tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </MotionSection>
+    );
+};
+
+const Layout = () => {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  const navLinks = [
+    { title: "الرئيسية", path: "/" },
+    { title: "المسيرة", path: "/#biography" },
+    { title: "أشهر الأغاني", path: "/#songs" },
+    { title: "الحفلات", path: "/concerts" },
+    { title: "المعرض", path: "/#gallery" },
+  ];
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location]);
+
+  return (
+    <>
+      <motion.div className="progress-bar" style={{ scaleX }} />
+      <div className="bg-background text-text-primary font-body">
+        <header className="fixed top-0 left-0 right-0 z-50 transition-colors duration-300 bg-background/80 backdrop-blur-sm">
+          <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+            <Link to="/" className="font-display font-bold text-2xl text-primary">كوكب الشرق</Link>
+            <nav className="hidden md:flex items-center space-x-8 rtl:space-x-reverse">
+              {navLinks.map((link) => (
+                <Link key={link.path} to={link.path} className="text-text-secondary hover:text-primary transition-colors duration-300 pb-1 border-b-2 border-transparent hover:border-primary"> {link.title} </Link>
+              ))}
+            </nav>
+            <div className="md:hidden">
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-primary z-50">
+                {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+              </button>
+            </div>
+          </div>
+          {isMenuOpen && (
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                className="md:hidden absolute top-full left-0 w-full bg-background shadow-lg">
+                <nav className="flex flex-col items-center py-4">
+                    {navLinks.map((link) => (
+                        <Link key={link.path} to={link.path} className="py-3 text-lg text-text-secondary hover:text-primary transition-colors duration-300"> {link.title} </Link>
+                    ))}
+                </nav>
+            </motion.div>
+          )}
+        </header>
+
+        <main>
+            <Outlet />
+        </main>
+
+        <footer className="bg-neutral-800 text-neutral-300 py-8">
+            <div className="container mx-auto px-6 text-center">
+                <p className="font-display text-lg">"لقد عرفت في حياتي الطويلة أن كل مجد الدنيا باطل أمام لحظة حب صادقة." - أم كلثوم</p>
+                <p className="mt-4 text-sm font-body opacity-70">صُنع هذا الموقع بحب وتقدير لصوت مصر الخالد. &copy; {new Date().getFullYear()}</p>
+            </div>
+        </footer>
+      </div>
+    </>
+  );
+};
+
+const App = () => {
+    return (
+        <HashRouter>
+            <ScrollToAnchor />
+            <Routes>
+                <Route path="/" element={<Layout />}>
+                    <Route index element={<HomePage />} />
+                    <Route path="concerts" element={<ConcertsPage />} />
+                </Route>
+            </Routes>
+        </HashRouter>
+    );
+};
 
 createRoot(document.getElementById("root")).render(<App />);
